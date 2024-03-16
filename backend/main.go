@@ -26,23 +26,13 @@ func main() {
 	http.ListenAndServe(":8002", nil)
 }
 
-// func foo(w http.ResponseWriter, r *http.Request) {
-
-// 	js, err := json.Marshal(Articles)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.Write(js)
-// }
-
+// don't change this, this enables the CORS
 func enableCors(w *http.ResponseWriter) {
 	fmt.Println("Enabling CORS")
 	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 }
 
+// handle...later adjust this to what we need.
 func handleArticles(w http.ResponseWriter, r *http.Request) {
 
 	enableCors(&w)

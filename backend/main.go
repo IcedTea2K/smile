@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// probs delete
 type Article struct {
 	Id      string
 	Title   string
@@ -17,19 +18,21 @@ type Article struct {
 var Articles []Article
 
 func main() {
-	println("Listening on http://localhost:8002/articles")
+	println("Listening on http://localhost:8080/smile")
+
+	//probs change rah
 	Articles = []Article{
 		{Id: "1", Title: "First article", Desc: "Title of this fine article", Content: "Content for this fine article"},
 		{Id: "2", Title: "Second article", Desc: "Title of this majestic article", Content: "Content for this majestic article"},
 	}
-	http.HandleFunc("/articles", handleArticles)
-	http.ListenAndServe(":8002", nil)
+	http.HandleFunc("/smile", handleArticles)
+	http.ListenAndServe(":8080", nil)
 }
 
-// don't change this, this enables the CORS
+// don't change this, this enables the CORS , change * to http address of front end
 func enableCors(w *http.ResponseWriter) {
 	fmt.Println("Enabling CORS")
-	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 // handle...later adjust this to what we need.

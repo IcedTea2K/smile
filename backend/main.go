@@ -1,10 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
-	"crypto/tls"
 )
 
 const (
@@ -34,7 +34,7 @@ func main() {
 		TLSConfig: config,
 	}
 	// log.Printf("Listening on %s...", port)
-	err = server.ListenAndServeTLS("","")
+	err = server.ListenAndServeTLS("", "")
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

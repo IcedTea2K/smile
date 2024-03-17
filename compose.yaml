@@ -1,0 +1,11 @@
+services:
+  server1:
+    build: backend
+  server2:
+    build: backend
+  server3:
+    build: backend
+  load_balancer:
+    build: load_balancer
+    ports:
+      - "8000:8000"

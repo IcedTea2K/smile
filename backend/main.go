@@ -15,7 +15,7 @@ const (
 func main() {
 	println("Listening on https://localhost:8080/")
 
-	cert, err := tls.LoadX509KeyPair("certificates/localhost+2.pem", "certificates/localhost+2-key.pem")
+	cert, err := tls.LoadX509KeyPair("/run/secrets/ssl_crt", "/run/secrets/ssl_key")
 	if err != nil {
 		log.Fatalf("Failed to load X509 key pair: %v", err)
 	}

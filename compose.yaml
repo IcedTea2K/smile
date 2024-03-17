@@ -1,11 +1,33 @@
 services:
   server1:
+    image: server:latest
     build: backend
+    secrets:
+      - ssl_key
+      - ssl_crt
   server2:
+    image: server:latest
     build: backend
+    secrets:
+      - ssl_key
+      - ssl_crt
   server3:
+    image: server:latest
     build: backend
+    secrets:
+      - ssl_key
+      - ssl_crt
   load_balancer:
+    image: load_balancer:latest
     build: load_balancer
+    secrets:
+      - ssl_key
+      - ssl_crt
     ports:
       - "8000:8000"
+
+secrets:
+  ssl_key:
+    file: ./certificates/localhost+2-key.pem
+  ssl_crt:
+    file: ./certificates/localhost+2.pem

@@ -7,8 +7,8 @@ COPY backend/go.mod .
 RUN go mod download
 COPY backend/*.go .
 
-RUN CGO_ENABLED=0 GOOS=darwin go build -o ./server
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server
 
-CMD ["./server"]
+CMD ["/server"]
 
-EXPOSE 3000
+EXPOSE 8080

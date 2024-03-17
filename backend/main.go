@@ -2,48 +2,53 @@ package main
 
 import (
 	"fmt"
-	// "log"
-	"encoding/json"
+	"log"
 	"net/http"
+	"crypto/tls"
 )
 
-// probs delete
-type Article struct {
-	Id      string
-	Title   string
-	Desc    string
-	Content string
-}
-
-var Articles []Article
+const (
+	port         = ":8080"
+	responseBody = "Hello, TLS!"
+)
 
 func main() {
-	println("Listening on http://localhost:8080/smile")
+	println("Listening on https://localhost:8080/")
 
-	//probs change rah
-	Articles = []Article{
-		{Id: "1", Title: "First article", Desc: "Title of this fine article", Content: "Content for this fine article"},
-		{Id: "2", Title: "Second article", Desc: "Title of this majestic article", Content: "Content for this majestic article"},
+	cert, err := tls.LoadX509KeyPair("certificates/server.crt", "certificates/server.key")
+	if err != nil {
+		log.Fatalf("Failed to load X509 key pair: %v", err)
 	}
-	http.HandleFunc("/smile", handleArticles)
-	http.ListenAndServe(":8080", nil)
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		// MinVersion:   tls.VersionTLS12,
+	}
+
+	router := http.NewServeMux()
+	router.HandleFunc("/", handleRequest)
+	//http.HandleFunc("/smile", handleRequest)
+	server := &http.Server{
+		Addr:      port,
+		Handler:   router,
+		TLSConfig: config,
+	}
+	// log.Printf("Listening on %s...", port)
+	err = server.ListenAndServeTLS("","")
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
 
-// don't change this, this enables the CORS , change * to http address of front end
+// this enables the CORS , change * to http address of front end
 func enableCors(w *http.ResponseWriter) {
 	fmt.Println("Enabling CORS")
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 // handle...later adjust this to what we need.
-func handleArticles(w http.ResponseWriter, r *http.Request) {
-
+func handleRequest(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-	js, err := json.Marshal(Articles)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(responseBody))
 }

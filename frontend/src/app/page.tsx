@@ -12,9 +12,8 @@ export default function Home() {
   const [article, setArticle] = useState<Article>()
 
   const fetchRoute = async () => {
-    const res = await fetch("http://localhost:8002/articles"); // waits for 5
-    const yummy = await res.json()
-    setArticle(yummy[1])
+    await fetch("https://localhost:8080/"); // waits for 5
+    console.log("test");
   }
 
   useEffect(() => {
@@ -23,7 +22,7 @@ export default function Home() {
 
   return (
     <div>
-      { article?.Content } 
+      {/* { article?.Content }  */}
     </div>
   );
 }

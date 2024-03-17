@@ -3,6 +3,7 @@
 *.dll
 *.so
 *.dylib
+.env
 
 *.test
 
@@ -10,3 +11,4 @@
 
 go.work
 .DS_Store
+certificates

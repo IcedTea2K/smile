@@ -1,6 +1,13 @@
+import tensorflow as tf
 import numpy as np
 import time
 import cv2
+
+test_model_path = "../training/output/fer_model.keras"
+test_model = tf.keras.models.load_model(test_model_path)
+
+labels = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"] # FER
+# labels = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"] # Deepface
 
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
@@ -22,11 +29,22 @@ while(True):
         minSize=(30, 30),
         # flags=cv2.CASCADE_SCALE_IMAGE
     )
-    for (x,y,w,h) in results:
-        cv2.rectangle(gray, (x,y), (x+w,y+h), (0,255,0),2)
+    if len(results) > 0:
+        (x,y,w,h) = results[0]
+        crop_img = gray[y:y+h, x:x+w]
+        scaled_img = cv2.resize(crop_img, (48,48))
+
+        tensor_img = tf.convert_to_tensor(scaled_img)
+        tensor_img = np.expand_dims(tensor_img,axis=0)
+        prediction = test_model.predict(tensor_img, batch_size=32)
+
+        guess = np.argmax(prediction, axis=-1)[0]
+        print(labels[guess])
+    else:
+        scaled_img = gray
 
     # Display the resulting frame
-    cv2.imshow('frame',gray)
+    cv2.imshow('scale',scaled_img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

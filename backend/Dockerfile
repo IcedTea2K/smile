@@ -3,9 +3,9 @@ FROM golang:1.22
 
 WORKDIR /app
 
-COPY backend/go.mod .
+COPY go.mod .
 RUN go mod download
-COPY backend/*.go .
+COPY *.go .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /server
 

@@ -1,9 +1,12 @@
 import tensorflow as tf
 import numpy as np
 import time
+# from rmn import RMN
 import cv2
 
-test_model_path = "../training/output/fer_model.keras"
+# m = RMN()
+
+test_model_path = "../training/output/fer_model-chinese-2.keras"
 test_model = tf.keras.models.load_model(test_model_path)
 
 labels = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"] # FER
@@ -34,12 +37,16 @@ while(True):
         crop_img = gray[y:y+h, x:x+w]
         scaled_img = cv2.resize(crop_img, (48,48))
 
+        # results = m.detect_emotion_for_single_frame(scaled_img)
+        # print(results)
+
         tensor_img = tf.convert_to_tensor(scaled_img)
         tensor_img = np.expand_dims(tensor_img,axis=0)
-        prediction = test_model.predict(tensor_img, batch_size=32)
+        prediction = test_model.predict(tensor_img, batch_size=32)[0]
 
-        guess = np.argmax(prediction, axis=-1)[0]
-        print(labels[guess])
+        # guess = np.argmax(prediction, axis=-1)[0]
+        top = prediction.argsort()[-3:][::-1]
+        print([f"{labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
     else:
         scaled_img = gray
 

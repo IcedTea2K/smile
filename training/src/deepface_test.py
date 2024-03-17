@@ -60,7 +60,7 @@ model.save('../output/deepface_model.keras')
 # loss, acc = model.evaluate(test_ds, verbose=2)
 # print('Restored model, accuracy: {:5.2f}%'.format(100 * acc))
 
-happy_img = tf.keras.utils.load_img('../happy.png', color_mode='grayscale', target_size=(48, 48))
+happy_img = tf.keras.utils.load_img('../test/happy.png', color_mode='grayscale', target_size=(48, 48))
 happy_arr = tf.keras.utils.img_to_array(happy_img)
 happy_arr = np.array([happy_arr])
 
@@ -68,7 +68,7 @@ happy_pred = model.predict(happy_arr)
 print(happy_pred)
 print(np.argmax(happy_pred, axis=-1))
 
-sad_img = tf.keras.utils.load_img('../sad.png', color_mode='grayscale', target_size=(48, 48))
+sad_img = tf.keras.utils.load_img('../test/sad.png', color_mode='grayscale', target_size=(48, 48))
 sad_arr = tf.keras.utils.img_to_array(sad_img)
 sad_arr = np.array([sad_arr])
 

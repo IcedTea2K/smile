@@ -81,6 +81,8 @@ model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
+early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
+
 checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath=checkpoint_path,
     monitor='val_accuracy',
@@ -94,7 +96,7 @@ history = model.fit(
   train_ds,
   validation_data=val_ds,
   epochs=epochs,
-  callbacks=[checkpoint_callback]
+  callbacks=[early_stopping, checkpoint_callback]
 )
 
 model.save('../output/fer_model.keras')

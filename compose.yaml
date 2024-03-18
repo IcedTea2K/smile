@@ -2,36 +2,48 @@ services:
   server1:
     image: server:latest
     build: backend
+    entrypoint: []
+    command: sh -c "update-ca-certificates && ./bin/server"
     secrets:
       - SSL_KEY1
       - SSL_CRT1
+      - rootCA
     environment:
       - SSL_KEY=/run/secrets/SSL_KEY1
       - SSL_CRT=/run/secrets/SSL_CRT1
   server2:
     image: server:latest
     build: backend
+    entrypoint: []
+    command: sh -c "update-ca-certificates && ./bin/server"
     secrets:
       - SSL_KEY2
       - SSL_CRT2
+      - rootCA
     environment:
       - SSL_KEY=/run/secrets/SSL_KEY2
       - SSL_CRT=/run/secrets/SSL_CRT2
   server3:
     image: server:latest
     build: backend
+    entrypoint: []
+    command: sh -c "update-ca-certificates && ./bin/server"
     secrets:
       - SSL_KEY3
       - SSL_CRT3
+      - rootCA
     environment:
       - SSL_KEY=/run/secrets/SSL_KEY3
       - SSL_CRT=/run/secrets/SSL_CRT3
   load_balancer:
     image: load_balancer:latest
     build: load_balancer
+    entrypoint: []
+    command: sh -c "update-ca-certificates && ./bin/balancer"
     secrets:
       - ssl_key
       - ssl_crt
+      - rootCA
     environment:
       - SSL_KEY=/run/secrets/ssl_key
       - SSL_CRT=/run/secrets/ssl_crt
@@ -59,3 +71,5 @@ secrets:
     file: ./certificates/server3-key.pem
   SSL_CRT3:
     file: ./certificates/server3.pem
+  rootCA:
+    file: ./certificates/rootCA.pem

@@ -8,5 +8,6 @@ RUN go mod download
 COPY *.go .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./bin/server
+RUN ln -s /run/secrets/rootCA /usr/local/share/ca-certificates/rootCA.crt
 
 CMD ["./bin/server"]

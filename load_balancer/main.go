@@ -1,18 +1,19 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"crypto/tls"
 	"os"
+	"strconv"
 )
 
 const SERVER_URL = "https://server"
 const SERVER_PORT = ":8080"
-const SERVER_END_POINT = "/smile"
+const SERVER_END_POINT = "/"
 
 const PROXY_PORT = ":8000"
 
@@ -33,7 +34,7 @@ func main()  {
 	}
 
 	router := http.NewServeMux()
-	router.HandleFunc("/", home)
+	router.HandleFunc("/home", home)
 	router.HandleFunc("/{id}", serverRedirect)
 	//http.HandleFunc("/smile", handleRequest)
 	server := &http.Server{
@@ -53,6 +54,13 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func serverRedirect(w http.ResponseWriter, r *http.Request) {
+    if _, err := strconv.Atoi(r.PathValue("id")); r.PathValue("id") == "" || err != nil {
+        fmt.Println("Tryingn to access an invalid server")
+        w.WriteHeader(http.StatusNotFound)
+        w.Write([]byte("Not a valid server"))
+        return
+    }
+
     serverPath, err := url.Parse(SERVER_URL + r.PathValue("id") + SERVER_PORT)
     log.Println(serverPath.String())
     if err != nil {

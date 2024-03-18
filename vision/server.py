@@ -1,20 +1,30 @@
 import asyncio
 import json
 import logging
-import os
-import ssl
 import uuid
+import os
 
 import cv2
 from aiohttp import web
-from av import VideoFrame
-
+import aiohttp_cors
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaRelay
+import vision
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
+
+async def recv_track(track):
+  frame = await track.recv()
+
+  img = frame.to_ndarray(format="bgr24")
+  prediction = vision.predict(img)
+  if prediction is not None:
+    # guess = np.argmax(prediction, axis=-1)[0]
+    top = prediction.argsort()[-3:][::-1]
+    print([f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
 
 class VideoTransformTrack(MediaStreamTrack):
   """
@@ -23,16 +33,21 @@ class VideoTransformTrack(MediaStreamTrack):
 
   kind = "video"
 
-  def __init__(self, track, transform):
+  def __init__(self, track):
     super().__init__()  # don't forget this!\
-
+    self.track = track
+  
   async def recv(self):
     frame = await self.track.recv()
 
     img = frame.to_ndarray(format="bgr24")
-    cv2.imshow('img', img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-      break
+    prediction = vision.predict(img)
+    if prediction is not None:
+      # guess = np.argmax(prediction, axis=-1)[0]
+      top = prediction.argsort()[-3:][::-1]
+      print([f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
+    # cv2.imshow('img', img)
+    return frame
 
 async def offer(request):
   params = await request.json()
@@ -47,13 +62,6 @@ async def offer(request):
 
   log_info("Created for %s", request.remote)
 
-  @pc.on("datachannel")
-  def on_datachannel(channel):
-    @channel.on("message")
-    def on_message(message):
-      if isinstance(message, str) and message.startswith("ping"):
-          channel.send("pong" + message[4:])
-
   @pc.on("connectionstatechange")
   async def on_connectionstatechange():
     log_info("Connection state is %s", pc.connectionState)
@@ -67,9 +75,7 @@ async def offer(request):
 
     if track.kind == "video":
       pc.addTrack(
-        VideoTransformTrack(
-          relay.subscribe(track), transform=params["video_transform"]
-        )
+        VideoTransformTrack(relay.subscribe(track))
       )
 
     @track.on("ended")
@@ -83,7 +89,7 @@ async def offer(request):
   if answer:
     await pc.setLocalDescription(answer)
   else:
-    logger.error("Couldn't create answer")
+    print("Couldn't create answer")
 
   return web.Response(
     content_type="application/json",
@@ -98,10 +104,16 @@ async def on_shutdown(app):
   await asyncio.gather(*coros)
   pcs.clear()
 
+if __name__ == "__main__":
+  app = web.Application()
+  app.on_shutdown.append(on_shutdown)
+  cors = aiohttp_cors.setup(app)
 
-app = web.Application()
-app.on_shutdown.append(on_shutdown)
-app.router.add_post("/offer", offer)
-web.run_app(
-    app, access_log=None, host="0.0.0.0", port=8001
-)
+  offer_resource = cors.add(app.router.add_resource("/offer"))
+  cors.add(offer_resource.add_route("POST", offer), {
+    "*": aiohttp_cors.ResourceOptions(allow_methods=["POST"], allow_headers=["Content-Type"]),
+  })
+
+  web.run_app(
+      app, access_log=None, host="0.0.0.0", port=8001
+  )

@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import time
 # from rmn import RMN
 import cv2
 
@@ -12,15 +11,7 @@ test_model = tf.keras.models.load_model(test_model_path)
 labels = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"] # FER
 # labels = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"] # Deepface
 
-cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    print("Cannot open camera")
-    exit()
-
-while(True):
-    # Capture frame-by-frame
-    ret, frame = cap.read()
-
+def predict(frame):
     # Our operations on the frame come here
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -44,19 +35,33 @@ while(True):
         tensor_img = np.expand_dims(tensor_img,axis=0)
         prediction = test_model.predict(tensor_img, batch_size=32)[0]
 
-        # guess = np.argmax(prediction, axis=-1)[0]
-        top = prediction.argsort()[-3:][::-1]
-        print([f"{labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
+        return prediction
     else:
-        scaled_img = gray
+        return None
 
-    # Display the resulting frame
-    cv2.imshow('scale',scaled_img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+if __name__ == "__main__":
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cannot open camera")
+        exit()
 
-    # time.sleep(100)
+    while(True):
+        # Capture frame-by-frame
+        ret, frame = cap.read()
 
-# When everything done, release the capture
-cap.release()
-cv2.destroyAllWindows()
+        prediction = predict(frame)
+        if prediction is not None:
+            # guess = np.argmax(prediction, axis=-1)[0]
+            top = prediction.argsort()[-3:][::-1]
+            print([f"{labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
+
+        # Display the resulting frame
+        cv2.imshow('scale',frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        # time.sleep(100)
+
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()

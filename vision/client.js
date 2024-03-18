@@ -113,7 +113,13 @@ function start() {
     document.getElementById('emotion-container').style.display = 'block';
   };
   dc.onmessage = function (evt) {
-    document.getElementById('emotion').innerText = evt.data;
+    const predictions = JSON.parse(evt.data);
+    const neutral = predictions.neutral ? `neutral: ${Math.round(predictions.neutral*100)}\n` : '';
+    const sad = predictions.sad ? `sad: ${Math.round(predictions.sad * 100)}\n` : '';
+    const angry = predictions.angry ? `angry: ${Math.round(predictions.angry * 100)}\n` : '';
+
+    const prediction = predictions?.sad * 100 > 35 ? "sad" : "not sad";
+    document.getElementById('emotion').innerText = neutral + sad + angry + prediction;
   };
 
   var constraints = {

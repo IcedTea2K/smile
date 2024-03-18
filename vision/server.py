@@ -3,8 +3,8 @@ import json
 import logging
 import uuid
 import time
+import json
 
-import cv2
 from aiohttp import web
 import aiohttp_cors
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription, RTCDataChannel
@@ -33,7 +33,7 @@ class EmotionRecognitionTrack(MediaStreamTrack):
     frame = await self.track.recv()
 
     curr_time = time.monotonic()
-    if(curr_time - self.last_time > 0.5):
+    if(curr_time - self.last_time > 1):
       self.last_time = curr_time
       await self.predict_emotion(frame)
     
@@ -45,9 +45,10 @@ class EmotionRecognitionTrack(MediaStreamTrack):
     if prediction is not None:
       # guess = np.argmax(prediction, axis=-1)[0]
       top = prediction.argsort()[-3:][::-1]
-      top_labeled = [f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top]
+      
+      top_labeled = {vision.labels[guess]: prediction[guess].item() for guess in top}
       if self.dc and self.dc.readyState == "open":
-        self.dc.send(top_labeled.__str__())
+        self.dc.send(json.dumps(top_labeled))
 
 async def offer(request):
   params = await request.json()

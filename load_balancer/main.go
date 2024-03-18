@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"crypto/tls"
+	"os"
 )
 
 const SERVER_URL = "https://server"
@@ -21,7 +22,7 @@ func main()  {
     // http.HandleFunc("/", home)
     // log.Fatal(http.ListenAndServe(":8000", nil))
 
-	cert, err := tls.LoadX509KeyPair("/run/secrets/ssl_crt", "/run/secrets/ssl_key")
+	cert, err := tls.LoadX509KeyPair(os.Getenv("SSL_CRT"), os.Getenv("SSL_KEY"))
 	if err != nil {
 		log.Fatalf("Failed to load X509 key pair: %v", err)
 	}

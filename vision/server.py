@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import uuid
-import os
+import time
 
 import cv2
 from aiohttp import web
@@ -16,19 +16,9 @@ logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
 
-async def recv_track(track):
-  frame = await track.recv()
-
-  img = frame.to_ndarray(format="bgr24")
-  prediction = vision.predict(img)
-  if prediction is not None:
-    # guess = np.argmax(prediction, axis=-1)[0]
-    top = prediction.argsort()[-3:][::-1]
-    print([f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
-
-class VideoTransformTrack(MediaStreamTrack):
+class EmotionRecognitionTrack(MediaStreamTrack):
   """
-  A video stream track that transforms frames from an another track.
+  A video stream track that consumes frames from an another track.
   """
 
   kind = "video"
@@ -36,18 +26,25 @@ class VideoTransformTrack(MediaStreamTrack):
   def __init__(self, track):
     super().__init__()  # don't forget this!\
     self.track = track
+    self.last_time = time.monotonic()
   
   async def recv(self):
     frame = await self.track.recv()
 
+    curr_time = time.monotonic()
+    if(curr_time - self.last_time > 0.5):
+      self.last_time = curr_time
+      await self.predict_emotion(frame)
+    
+    return frame
+  
+  async def predict_emotion(self, frame):
     img = frame.to_ndarray(format="bgr24")
     prediction = vision.predict(img)
     if prediction is not None:
       # guess = np.argmax(prediction, axis=-1)[0]
       top = prediction.argsort()[-3:][::-1]
       print([f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
-    # cv2.imshow('img', img)
-    return frame
 
 async def offer(request):
   params = await request.json()
@@ -74,8 +71,9 @@ async def offer(request):
     log_info("Track %s received", track.kind)
 
     if track.kind == "video":
+      # consumer = VideoTransformTrack(relay.subscribe(track))
       pc.addTrack(
-        VideoTransformTrack(relay.subscribe(track))
+        EmotionRecognitionTrack(relay.subscribe(track))
       )
 
     @track.on("ended")

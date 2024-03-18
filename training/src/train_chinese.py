@@ -24,6 +24,8 @@ train_ds, val_ds = tf.keras.utils.image_dataset_from_directory(
   subset="both"
 )
 
+# https://github.com/jiantenggei/Convolutional-Neural-Network-Hyperparameters-Optimization-for-Facial-Emotion-Recognition
+
 class_names = train_ds.class_names
 
 AUTOTUNE = tf.data.AUTOTUNE

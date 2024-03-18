@@ -114,12 +114,18 @@ function start() {
   };
   dc.onmessage = function (evt) {
     const predictions = JSON.parse(evt.data);
-    const neutral = predictions.neutral ? `neutral: ${Math.round(predictions.neutral*100)}\n` : '';
-    const sad = predictions.sad ? `sad: ${Math.round(predictions.sad * 100)}\n` : '';
-    const angry = predictions.angry ? `angry: ${Math.round(predictions.angry * 100)}\n` : '';
+    const neutral = predictions.neutral ? `neutral: ${Math.round(predictions.neutral)}\n` : '';
+    const sad = predictions.sad ? `sad: ${Math.round(predictions.sad)}\n` : '';
+    const angry = predictions.angry ? `angry: ${Math.round(predictions.angry)}\n` : '';
 
-    const prediction = predictions?.sad * 100 > 35 ? "sad" : "not sad";
-    document.getElementById('emotion').innerText = neutral + sad + angry + prediction;
+    const isSad = predictions?.sad > 30 || 
+                  predictions?.angry > 30 ||
+                  predictions?.neutral < 75 && predictions?.sad > 20 ||
+                  predictions?.neutral < 75 && predictions?.angry > 20 ||
+                  (predictions?.sad > predictions?.neutral && !predictions.surprised);
+    const prediction = isSad ? "sad" : "not sad";
+    document.getElementById('emotion').innerText = neutral + sad + angry;
+    document.getElementById('prediction').innerText = `you are ${prediction}`;
   };
 
   var constraints = {

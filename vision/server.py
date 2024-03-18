@@ -9,7 +9,7 @@ from aiohttp import web
 import aiohttp_cors
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from aiortc.contrib.media import MediaRelay
-import vision
+import predict
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pc")
@@ -23,30 +23,31 @@ class EmotionRecognitionTrack(MediaStreamTrack):
 
   kind = "video"
 
-  def __init__(self, track, dc: RTCDataChannel|None):
+  def __init__(self):
     super().__init__()  # don't forget this!
-    self.track = track
+    self.track: MediaStreamTrack|None = None
+    self.dc: RTCDataChannel|None = None
     self.last_time = time.monotonic()
-    self.dc = dc
   
   async def recv(self):
-    frame = await self.track.recv()
+    if self.track:
+      frame = await self.track.recv()
 
-    curr_time = time.monotonic()
-    if(curr_time - self.last_time > 1):
-      self.last_time = curr_time
-      await self.predict_emotion(frame)
-    
-    return frame
+      curr_time = time.monotonic()
+      if(curr_time - self.last_time > 1):
+        self.last_time = curr_time
+        await self.predict_emotion(frame)
+      
+      return frame
   
   async def predict_emotion(self, frame):
     img = frame.to_ndarray(format="bgr24")
-    prediction = vision.predict(img)
+    prediction = predict.predict(img)
     if prediction is not None:
       # guess = np.argmax(prediction, axis=-1)[0]
       top = prediction.argsort()[-3:][::-1]
       
-      top_labeled = {vision.labels[guess]: prediction[guess].item() for guess in top}
+      top_labeled = {predict.labels[guess]: prediction[guess].item()*100 for guess in top}
       if self.dc and self.dc.readyState == "open":
         self.dc.send(json.dumps(top_labeled))
 
@@ -58,9 +59,7 @@ async def offer(request):
   pc_id = "PeerConnection(%s)" % uuid.uuid4()
   pcs.add(pc)
 
-  emotion_track = EmotionRecognitionTrack(None, None)
-
-  # dc = pc.createDataChannel('emotion')
+  emotion_track = EmotionRecognitionTrack()
 
   def log_info(msg, *args):
     logger.info(pc_id + " " + msg, *args)

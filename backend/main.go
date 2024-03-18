@@ -28,6 +28,7 @@ func main() {
 
 	router := http.NewServeMux()
 	router.HandleFunc("/", handleRequest)
+	router.HandleFunc("/home", home)
 	//http.HandleFunc("/smile", handleRequest)
 	server := &http.Server{
 		Addr:      port,
@@ -45,6 +46,10 @@ func main() {
 func enableCors(w *http.ResponseWriter) {
 	fmt.Println("Enabling CORS")
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func home(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("At home with rey")
 }
 
 // handle...later adjust this to what we need.

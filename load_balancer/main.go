@@ -17,6 +17,8 @@ const SERVER_END_POINT = "/"
 
 const PROXY_PORT = ":8000"
 
+var   CURR_SERVER = 1
+
 func main()  {
     // fmt.Println("Load balancing again yummy") 
     // http.HandleFunc("/{id}", serverRedirect)
@@ -34,8 +36,9 @@ func main()  {
 	}
 
 	router := http.NewServeMux()
-	router.HandleFunc("/home", home)
-	router.HandleFunc("/{id}", serverRedirect)
+    router.HandleFunc("/", load_balance)
+	// router.HandleFunc("/home", home)
+	// router.HandleFunc("/{id}", serverRedirect)
 	//http.HandleFunc("/smile", handleRequest)
 	server := &http.Server{
 		Addr:      PROXY_PORT,
@@ -49,8 +52,23 @@ func main()  {
 	}
 }
 
-func home(w http.ResponseWriter, r *http.Request) {
-    fmt.Println("At home with rey")
+func load_balance(w http.ResponseWriter, r *http.Request) {
+    serverPath, err := url.Parse(SERVER_URL + strconv.Itoa(CURR_SERVER) + SERVER_PORT)
+    log.Println(serverPath.String())
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        w.Write([]byte("Fatal internal problems"))
+        return
+    }
+
+    proxy := httputil.NewSingleHostReverseProxy(serverPath) 
+
+    proxy.ServeHTTP(w, r)
+
+    CURR_SERVER++
+    if CURR_SERVER > 3 {
+        CURR_SERVER = 1
+    }
 }
 
 func serverRedirect(w http.ResponseWriter, r *http.Request) {

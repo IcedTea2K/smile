@@ -4,13 +4,13 @@ iceGatheringLog = document.getElementById('ice-gathering-state'),
 signalingLog = document.getElementById('signaling-state');
 
 // peer connection
-var pc = null;
+let pc = null;
 
 // data channel
-var dc = null, dcInterval = null;
+let dc = null, dcInterval = null;
 
 function createPeerConnection() {
-  var config = {
+  let config = {
     sdpSemantics: 'unified-plan'
   };
 
@@ -41,6 +41,15 @@ function createPeerConnection() {
     if (evt.track.kind == 'video')
       document.getElementById('video').srcObject = evt.streams[0];
   });
+
+  pc.addEventListener('datachannel', function (evt) {
+    console.log("datas")
+    const dataChannel = evt.channel;
+    dataChannel.onmessage = function(evt) {
+      const message = evt.data;
+      console.log(message)
+    };
+  })
 
   return pc;
 }
@@ -93,6 +102,19 @@ function start() {
   document.getElementById('start').style.display = 'none';
 
   pc = createPeerConnection();
+
+  dc = pc.createDataChannel('emotion');
+  dc.onclose = function () {
+    console.log("Datachannel closed");
+    document.getElementById('emotion-container').style.display = 'none';
+  };
+  dc.onopen = function () {
+    console.log("Datachannel opened");
+    document.getElementById('emotion-container').style.display = 'block';
+  };
+  dc.onmessage = function (evt) {
+    document.getElementById('emotion').innerText = evt.data;
+  };
 
   var constraints = {
     audio: false,

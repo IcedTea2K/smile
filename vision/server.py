@@ -7,13 +7,13 @@ import time
 import cv2
 from aiohttp import web
 import aiohttp_cors
-from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
+from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from aiortc.contrib.media import MediaRelay
 import vision
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pc")
-pcs = set()
+pcs: set[RTCPeerConnection] = set()
 relay = MediaRelay()
 
 class EmotionRecognitionTrack(MediaStreamTrack):
@@ -23,10 +23,11 @@ class EmotionRecognitionTrack(MediaStreamTrack):
 
   kind = "video"
 
-  def __init__(self, track):
-    super().__init__()  # don't forget this!\
+  def __init__(self, track, dc: RTCDataChannel|None):
+    super().__init__()  # don't forget this!
     self.track = track
     self.last_time = time.monotonic()
+    self.dc = dc
   
   async def recv(self):
     frame = await self.track.recv()
@@ -44,7 +45,9 @@ class EmotionRecognitionTrack(MediaStreamTrack):
     if prediction is not None:
       # guess = np.argmax(prediction, axis=-1)[0]
       top = prediction.argsort()[-3:][::-1]
-      print([f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top])
+      top_labeled = [f"{vision.labels[guess]} {round(prediction[guess]*100)}%" for guess in top]
+      if self.dc and self.dc.readyState == "open":
+        self.dc.send(top_labeled.__str__())
 
 async def offer(request):
   params = await request.json()
@@ -53,6 +56,10 @@ async def offer(request):
   pc = RTCPeerConnection()
   pc_id = "PeerConnection(%s)" % uuid.uuid4()
   pcs.add(pc)
+
+  emotion_track = EmotionRecognitionTrack(None, None)
+
+  # dc = pc.createDataChannel('emotion')
 
   def log_info(msg, *args):
     logger.info(pc_id + " " + msg, *args)
@@ -66,28 +73,36 @@ async def offer(request):
       await pc.close()
       pcs.discard(pc)
 
+  @pc.on("datachannel")
+  def on_datachannel(channel):
+    emotion_track.dc = channel
+
+    @channel.on("message")
+    def on_message(message):
+      print(message)
+
   @pc.on("track")
   def on_track(track):
     log_info("Track %s received", track.kind)
 
     if track.kind == "video":
-      # consumer = VideoTransformTrack(relay.subscribe(track))
-      pc.addTrack(
-        EmotionRecognitionTrack(relay.subscribe(track))
-      )
+      emotion_track.track = relay.subscribe(track)
+      pc.addTrack(emotion_track)
 
     @track.on("ended")
     async def on_ended():
       log_info("Track %s ended", track.kind)
+      # dc.close()
 
   # handle offer
   await pc.setRemoteDescription(offer)
+  
   # send answer
   answer = await pc.createAnswer()
   if answer:
     await pc.setLocalDescription(answer)
   else:
-    print("Couldn't create answer")
+    logger.error("Couldn't create answer")
 
   return web.Response(
     content_type="application/json",
